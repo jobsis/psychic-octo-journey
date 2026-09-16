@@ -99,7 +99,41 @@ with col2:
     middle_content = st.container()
 
 with col3:
-    st.header("")
+    with st.expander("Manual / How to use"):
+        st.markdown(
+            """
+            ### Video Segment Clipper
+    
+            This app lets you preview or create short video clips from a video URL using pasted CSV or tab-separated data.
+    
+            #### How to use
+    
+            1. Enter or paste a **Video URL**.
+               - After changing the URL, press **Enter**.
+    
+            2. Paste your clip table into **Paste CSV**.
+               - Supported formats:
+                 - comma-separated
+                 - tab-separated
+               - Required columns:
+                 - `start`
+                 - `end`
+                 - `name`
+    
+            3. After editing the large text box, press **Ctrl+Enter**.
+               - This ensures Streamlit applies the latest text.
+    
+            4. Click:
+               - **Preview** to preview clips
+               - **Clip to download** to generate downloadable MP4 files
+    
+            #### Notes
+    
+            - `start` values are rounded **down**
+            - `end` values are rounded **up**
+            - Clips are limited to **60 seconds**
+            """
+        )
     right_content = st.container()
 
 
