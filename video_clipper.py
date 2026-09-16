@@ -107,14 +107,14 @@ if preview_clicked or clip_clicked:
     try:
         csv_text = csv_text.replace("\u200b", "")
         
+        sample = csv_text.splitlines()[0] if csv_text else ""
+        delimiter = "\t" if "\t" in sample else ","
+        
         df = pd.read_csv(
             StringIO(csv_text),
-            sep=None,
-            engine="python",
+            sep=delimiter,
         )
-
-        df = pd.read_csv(StringIO(csv_text))
-
+        
         df.columns = (
             df.columns.astype(str)
             .str.strip()
@@ -122,8 +122,7 @@ if preview_clicked or clip_clicked:
             .str.replace("\ufeff", "", regex=False)
         )
         
-        df["start"] = pd.to_numeric(df["start"], errors="raise").apply(math.floor)
-        df["end"] = pd.to_numeric(df["end"], errors="raise").apply(math.ceil)
+
 
         required_columns = {"start", "end", "name"}
         missing = required_columns - set(df.columns)
@@ -135,6 +134,8 @@ if preview_clicked or clip_clicked:
             st.warning("The CSV contains no rows.")
 
         else:
+            df["start"] = pd.to_numeric(df["start"], errors="raise").apply(math.floor)
+            df["end"] = pd.to_numeric(df["end"], errors="raise").apply(math.ceil)
             downloads = []
             total_rows = len(df)
 
