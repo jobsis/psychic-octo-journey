@@ -93,7 +93,7 @@ with col1:
 # 2. Progress / status
 # 3. Main content
 with col2:
-    st.subheader("Generated Clips")
+    st.text("Generated Clips")
     progress_box = st.empty()
     status_box = st.empty()
     middle_content = st.container()
