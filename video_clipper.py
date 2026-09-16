@@ -93,12 +93,14 @@ with col1:
 # 2. Progress / status
 # 3. Main content
 with col2:
-    st.text("Generated Clips")
+    st.subheader("Generated Clips")
+
     progress_box = st.empty()
     status_box = st.empty()
     middle_content = st.container()
 
 with col3:
+    
     with st.expander("Manual / How to use"):
         st.markdown(
             """
