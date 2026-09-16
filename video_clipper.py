@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 import hashlib
 import tempfile
+import math
 
 
 # base_dir = Path("C:/temp/clips")
@@ -105,6 +106,12 @@ with col3:
 if preview_clicked or clip_clicked:
     try:
         csv_text = csv_text.replace("\u200b", "")
+        
+        df = pd.read_csv(
+            StringIO(csv_text),
+            sep=None,
+            engine="python",
+        )
 
         df = pd.read_csv(StringIO(csv_text))
 
@@ -114,6 +121,9 @@ if preview_clicked or clip_clicked:
             .str.replace("\u200b", "", regex=False)
             .str.replace("\ufeff", "", regex=False)
         )
+        
+        df["start"] = pd.to_numeric(df["start"], errors="raise").apply(math.floor)
+        df["end"] = pd.to_numeric(df["end"], errors="raise").apply(math.ceil)
 
         required_columns = {"start", "end", "name"}
         missing = required_columns - set(df.columns)
