@@ -79,7 +79,7 @@ with col1:
         )
 
         clip_clicked = st.button(
-            "Clip",
+            "Clip for download",
             use_container_width=True,
         )
     else:
