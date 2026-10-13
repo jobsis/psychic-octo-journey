@@ -53,7 +53,7 @@ st.set_page_config(page_title="Video Segment Clipper", layout="wide")
 col1, col2, col3 = st.columns([1 / 3, 1 / 3, 1 / 3])
 
 with col1:
-    st.header("🎥 Video Segment Clipper")
+    st.markdown("#### 🎥 Video Segment Clipper")
 
     video_url = st.text_input(
         "Video URL",
@@ -65,12 +65,40 @@ with col1:
 
         csv_text = st.text_area(
             "Paste CSV",
-            height=200,
+            height=150,
             placeholder="""start,end,name,color
 3,10,test,green
 16,26,test,blue
 1000,1026,goal,#28a745""",
         )
+
+        minute_col, second_col, duration_col = st.columns(3)
+
+        with minute_col:
+            start_minute = st.number_input(
+                "Start minute",
+                min_value=0,
+                value=0,
+                step=1,
+            )
+
+        with second_col:
+            start_second = st.number_input(
+                "Start second",
+                min_value=0,
+                max_value=59,
+                value=0,
+                step=1,
+            )
+
+        with duration_col:
+            manual_duration = st.number_input(
+                "Duration (sec)",
+                min_value=1,
+                max_value=60,
+                value=10,
+                step=1,
+            )
 
         preview_clicked = st.button(
             "Preview",
@@ -93,7 +121,7 @@ with col1:
 # 2. Progress / status
 # 3. Main content
 with col2:
-    st.subheader("Generated Clips")
+    st.markdown("#### Generated Clips")
 
     progress_box = st.empty()
     status_box = st.empty()
@@ -141,22 +169,36 @@ with col3:
 
 if preview_clicked or clip_clicked:
     try:
-        csv_text = csv_text.replace("\u200b", "")
-        
-        sample = csv_text.splitlines()[0] if csv_text else ""
-        delimiter = "\t" if "\t" in sample else ","
-        
-        df = pd.read_csv(
-            StringIO(csv_text),
-            sep=delimiter,
-        )
-        
-        df.columns = (
-            df.columns.astype(str)
-            .str.strip()
-            .str.replace("\u200b", "", regex=False)
-            .str.replace("\ufeff", "", regex=False)
-        )
+        csv_text = csv_text.replace("\u200b", "").strip()
+        manual_mode = not csv_text
+
+        if manual_mode:
+            manual_start = int(start_minute) * 60 + int(start_second)
+
+            df = pd.DataFrame(
+                [
+                    {
+                        "start": manual_start,
+                        "end": manual_start + int(manual_duration),
+                        "name": "clip",
+                    }
+                ]
+            )
+        else:
+            sample = csv_text.splitlines()[0]
+            delimiter = "\t" if "\t" in sample else ","
+
+            df = pd.read_csv(
+                StringIO(csv_text),
+                sep=delimiter,
+            )
+
+            df.columns = (
+                df.columns.astype(str)
+                .str.strip()
+                .str.replace("\u200b", "", regex=False)
+                .str.replace("\ufeff", "", regex=False)
+            )
         
 
 
@@ -185,7 +227,8 @@ if preview_clicked or clip_clicked:
 
                 start = float(row["start"])
                 eind = float(row["end"])
-                clip_name = f"{str(row['name']).upper()}_{idx + 1:02d}"
+
+                clip_name = ("clip" if manual_mode else f"{str(row['name']).upper()}_{idx + 1:02d}")
 
                 if eind <= start:
                     status_box.warning(
@@ -270,4 +313,4 @@ if preview_clicked or clip_clicked:
                                 )
 
     except Exception as e:
-        st.error(f"Failed to parse CSV: {e}")
+        st.error(f"Could not process clips: {e}")
