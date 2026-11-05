@@ -21,8 +21,14 @@ def seconds_to_vtt_time(seconds):
     return f"{hours:02}:{minutes:02}:{secs:02}.{millis:03}"
 
 
-def create_clip(video_url, start, end, output_file):
+def create_clip(video_url, start, end, output_file, quality="fast"):
     duration = min(60, max(0, end - start))
+
+    encoding_options = {
+        "fast": ["-c", "copy"],
+        "720p": ["-c:v", "libx264", "-vf", "scale=1280:720", "-crf", "23"],
+        "1080p": ["-c:v", "libx264", "-vf", "scale=1920:1080", "-crf", "25"],
+    }
 
     cmd = [
         "ffmpeg",
@@ -35,8 +41,7 @@ def create_clip(video_url, start, end, output_file):
         str(duration),
         "-avoid_negative_ts",
         "make_zero",
-        "-c",
-        "copy",
+        *encoding_options[quality],
         output_file,
     ]
 
@@ -106,10 +111,35 @@ with col1:
             use_container_width=True,
         )
 
-        clip_clicked = st.button(
-            "Clip for download",
-            use_container_width=True,
+        quality_720_col, quality_1080_col, fast_col = st.columns([1, 1, 4])
+
+        with quality_720_col:
+            clip_720_clicked = st.button(
+                "720p",
+                use_container_width=True,
+            )
+
+        with quality_1080_col:
+            clip_1080_clicked = st.button(
+                "1080p",
+                use_container_width=True,
+            )
+
+        with fast_col:
+            clip_fast_clicked = st.button(
+                "Clip for download (fast)",
+                use_container_width=True,
+            )
+
+        clip_clicked = (
+            clip_720_clicked or clip_1080_clicked or clip_fast_clicked
         )
+        clip_quality = (
+            "720p" if clip_720_clicked
+            else "1080p" if clip_1080_clicked
+            else "fast"
+        )
+        
     else:
         csv_text = ""
         preview_clicked = False
@@ -155,7 +185,8 @@ with col3:
     
             4. Click:
                - **Preview** to preview clips
-               - **Clip to download** to generate downloadable MP4 files
+               - **720p** or **1080p** to generate resized MP4 files
+               - **Clip for download (fast)** to generate MP4 files using stream copy
     
             #### Notes
     
@@ -261,6 +292,7 @@ if preview_clicked or clip_clicked:
                             start,
                             eind,
                             str(output_file),
+                            quality=clip_quality,
                         )
 
                         downloads.append(
