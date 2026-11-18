@@ -58,15 +58,53 @@ st.set_page_config(page_title="Video Segment Clipper", layout="wide")
 col1, col2, col3 = st.columns([1 / 3, 1 / 3, 1 / 3])
 
 with col1:
-    st.markdown("#### 🎥 Video Segment Clipper")
+    title_col, upload_col = st.columns([3, 1])
+
+    with title_col:
+        st.markdown("#### 🎥 Video Segment Clipper")
+
+    with upload_col:
+        with st.popover("Upload", use_container_width=True):
+            uploaded_video = st.file_uploader(
+                "Upload a video",
+                type=["mp4", "mov", "mkv", "avi", "webm", "m4v"],
+                key="uploaded_video",
+            )
 
     video_url = st.text_input(
         "Video URL",
         value="https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/1080/Big_Buck_Bunny_1080_10s_30MB.mp4",
+        disabled=uploaded_video is not None,
     )
 
-    if video_url:
-        st.video(video_url)
+    video_source = video_url
+    processing_source = video_url
+    source_id = hashlib.sha256(video_url.encode()).hexdigest()
+
+    if uploaded_video is not None:
+        video_source = uploaded_video.getvalue()
+        source_id = hashlib.sha256(video_source).hexdigest()
+
+        # FFmpeg needs a filesystem path for uploaded videos.
+        if "video_upload_directory" not in st.session_state:
+            st.session_state.video_upload_directory = tempfile.TemporaryDirectory(
+                prefix="video_clipper_"
+            )
+
+        upload_directory = Path(
+            st.session_state.video_upload_directory.name
+        )
+        uploaded_path = upload_directory / (
+            f"{source_id}{Path(uploaded_video.name).suffix.lower()}"
+        )
+
+        if not uploaded_path.exists():
+            uploaded_path.write_bytes(video_source)
+
+        processing_source = str(uploaded_path)
+
+    if uploaded_video is not None or video_url:
+        st.video(video_source)
 
         csv_text = st.text_area(
             "Paste CSV",
@@ -193,6 +231,7 @@ with col3:
             - `start` values are rounded **down**
             - `end` values are rounded **up**
             - Clips are limited to **60 seconds**
+            - Click Upload beside the title to use a local video instead of a URL. Remove the uploaded file to return to URL mode.
             """
         )
     right_content = st.container()
@@ -279,16 +318,13 @@ if preview_clicked or clip_clicked:
 
                 with target_container:
                     if clip_clicked:
-                        video_dir = (
-                            base_dir
-                            / hashlib.sha1(video_url.encode()).hexdigest()[:8]
-                        )
+                        video_dir = base_dir / source_id
                         video_dir.mkdir(parents=True, exist_ok=True)
 
                         output_file = video_dir / f"{clip_name}.mp4"
 
                         create_clip(
-                            str(video_url),
+                            processing_source,
                             start,
                             eind,
                             str(output_file),
@@ -309,7 +345,7 @@ if preview_clicked or clip_clicked:
 """
 
                         st.video(
-                            video_url,
+                            video_source,
                             start_time=start,
                             end_time=eind,
                             subtitles=subtitle_content,
